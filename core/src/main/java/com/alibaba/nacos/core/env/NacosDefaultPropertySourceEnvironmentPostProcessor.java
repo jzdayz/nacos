@@ -86,6 +86,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
             PropertySource nacosDefaultPropertySource = buildPropertySource(resourceLoader);
             MutablePropertySources propertySources = environment.getPropertySources();
             // append nacosDefaultPropertySource as last one in order to be overrided by higher order
+            // 添加到最后一个source
             propertySources.addLast(nacosDefaultPropertySource);
         } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e);
