@@ -33,6 +33,7 @@ public class Nacos {
     static {
 
         System.setProperty("nacos.home","/Users/jzdayz/Documents/nacos");
+        System.setProperty("nacos.standalone","true");
 
     }
 
