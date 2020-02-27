@@ -36,24 +36,24 @@ import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
  * @since 0.2.2
  */
 public class LoggingSpringApplicationRunListener implements SpringApplicationRunListener, Ordered {
-    
+
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
-    
+
     private final SpringApplication application;
-    
+
     private final String[] args;
-    
+
     public LoggingSpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
     }
-    
+
     @Override
     public void starting() {
     }
-    
+
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         ApplicationUtils.injectEnvironment(environment);
@@ -66,32 +66,32 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
             }
         }
     }
-    
+
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void started(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void running(ConfigurableApplicationContext context) {
-    
+
     }
-    
+
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
-    
+
     }
-    
+
     /**
      * Before {@link EventPublishingRunListener}.
      *

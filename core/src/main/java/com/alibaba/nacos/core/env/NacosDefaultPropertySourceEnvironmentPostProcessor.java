@@ -44,12 +44,12 @@ import static org.springframework.core.io.support.ResourcePatternResolver.CLASSP
  * @since 0.2.2
  */
 public class NacosDefaultPropertySourceEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
-    
+
     /**
      * The name of Nacos default {@link PropertySource}.
      */
     public static final String PROPERTY_SOURCE_NAME = "nacos-default";
-    
+
     /**
      * The resource location pattern of Nacos default {@link PropertySource}.
      *
@@ -57,31 +57,31 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
      */
     public static final String RESOURCE_LOCATION_PATTERN =
             CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
-    
+
     private static final String FILE_ENCODING = "UTF-8";
-    
+
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        
+
         ResourceLoader resourceLoader = getResourceLoader(application);
-        
+
         processPropertySource(environment, resourceLoader);
-        
+
     }
-    
+
     private ResourceLoader getResourceLoader(SpringApplication application) {
-        
+
         ResourceLoader resourceLoader = application.getResourceLoader();
-        
+
         if (resourceLoader == null) {
             resourceLoader = new DefaultResourceLoader(application.getClassLoader());
         }
-        
+
         return resourceLoader;
     }
-    
+
     private void processPropertySource(ConfigurableEnvironment environment, ResourceLoader resourceLoader) {
-        
+
         try {
             PropertySource nacosDefaultPropertySource = buildPropertySource(resourceLoader);
             MutablePropertySources propertySources = environment.getPropertySources();
@@ -92,13 +92,13 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-    
+
     private PropertySource buildPropertySource(ResourceLoader resourceLoader) throws IOException {
         CompositePropertySource propertySource = new CompositePropertySource(PROPERTY_SOURCE_NAME);
         appendPropertySource(propertySource, resourceLoader);
         return propertySource;
     }
-    
+
     private void appendPropertySource(CompositePropertySource propertySource, ResourceLoader resourceLoader)
             throws IOException {
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver(resourceLoader);
@@ -112,7 +112,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
             }
         }
     }
-    
+
     @Override
     public int getOrder() {
         return LOWEST_PRECEDENCE;

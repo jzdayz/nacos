@@ -117,7 +117,7 @@ public class ServiceController {
         service.setProtectThreshold(protectThreshold);
         service.setEnabled(true);
         service.setMetadata(metadataMap);
-        service.setSelector(parseSelector(selector));
+        service.setSelector( parseSelector(selector));
         service.setNamespaceId(namespaceId);
         
         // now valid the service. if failed, exception will be thrown
