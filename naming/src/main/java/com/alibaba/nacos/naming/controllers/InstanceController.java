@@ -83,6 +83,11 @@ public class InstanceController {
 
     private DataSource pushDataSource = new DataSource() {
 
+        /**
+         *
+         * @param client target client
+         * @return 返回client对应的service的元数据
+         */
         @Override
         public String getData(PushService.PushClient client) {
 
@@ -509,7 +514,7 @@ public class InstanceController {
      */
     public ObjectNode doSrvIpxt(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
             int udpPort, String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
-
+        // 客户端信息
         ClientInfo clientInfo = new ClientInfo(agent);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -544,10 +549,11 @@ public class InstanceController {
         }
 
         List<Instance> srvedIPs;
-
+        // 获取指定clusters的实例，如果clusters为空，则返回所有的实例
         srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
+        // selector 过滤
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
             srvedIPs = service.getSelector().select(clientIP, srvedIPs);
         }
@@ -590,14 +596,14 @@ public class InstanceController {
         }
 
         double threshold = service.getProtectThreshold();
-
+        // 健康实例的数量小于等于 阈值
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             if (isCheck) {
                 result.put("reachProtectThreshold", true);
             }
-
+            // 将所有的实例，都加入健康实例队列
             ipMap.get(Boolean.TRUE).addAll(ipMap.get(Boolean.FALSE));
             ipMap.get(Boolean.FALSE).clear();
         }
@@ -613,7 +619,7 @@ public class InstanceController {
 
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();
-
+            // 只是健康的 && 当前的entry是不健康的实例容器
             if (healthyOnly && !entry.getKey()) {
                 continue;
             }
@@ -621,6 +627,7 @@ public class InstanceController {
             for (Instance instance : ips) {
 
                 // remove disabled instance:
+                // 过滤关闭的实例
                 if (!instance.isEnabled()) {
                     continue;
                 }

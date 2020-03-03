@@ -157,7 +157,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                         Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
                     }
-
+                    // 同一个service，用同样的数据
                     if (compressData != null) {
                         ackEntry = prepareAckEntry(client, compressData, data, lastRefTime);
                     } else {
@@ -170,7 +170,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
                             client.getServiceName(), client.getAddrStr(), client.getAgent(),
                             (ackEntry == null ? null : ackEntry.key));
-
+                    // 发送
                     udpPush(ackEntry);
                 }
             } catch (Exception e) {
@@ -610,16 +610,18 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
         try {
             if (!ackMap.containsKey(ackEntry.key)) {
+                // 记录发送次数
                 totalPush++;
             }
             ackMap.put(ackEntry.key, ackEntry);
+            // 记录发送的时间
             udpSendTimeMap.put(ackEntry.key, System.currentTimeMillis());
 
             Loggers.PUSH.info("send udp packet: " + ackEntry.key);
             udpSocket.send(ackEntry.origin);
 
             ackEntry.increaseRetryTime();
-
+            // 提交一个任务，10s后查看是否有此次发送，对应的响应，如果没有，则继续发送
             GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
                     TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
 
@@ -718,12 +720,19 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 return retryTimes.get();
             }
 
+            /**
+             *  数据key
+             */
             public String key;
-
+            /**
+             *  发送的udp包
+             */
             public DatagramPacket origin;
 
             private AtomicInteger retryTimes = new AtomicInteger(0);
-
+            /**
+             *  service对应的元数据
+             */
             public Map<String, Object> data;
         }
 

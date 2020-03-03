@@ -21,6 +21,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.SystemUtils.FUNCTION_MODE_NAMING;
+
 /**
  * @author nacos
  */
@@ -31,7 +34,7 @@ public class Nacos {
 
     // 这里测试使用
     static {
-
+        System.setProperty(FUNCTION_MODE_PROPERTY_NAME,FUNCTION_MODE_NAMING);
         System.setProperty("nacos.home","/Users/jzdayz/Documents/nacos");
         System.setProperty("nacos.standalone","true");
 
