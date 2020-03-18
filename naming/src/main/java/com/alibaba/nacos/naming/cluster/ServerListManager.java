@@ -55,30 +55,30 @@ import java.util.Optional;
  */
 @Component("serverListManager")
 public class ServerListManager implements MemberChangeListener {
-    
+
     private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private final Synchronizer synchronizer = new ServerStatusSynchronizer();
-    
+
     private volatile List<Member> servers;
-    
+
     public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
         this.switchDomain = switchDomain;
         this.memberManager = memberManager;
         NotifyCenter.registerSubscribe(this);
         this.servers = new ArrayList<>(memberManager.allMembers());
     }
-    
+
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
         GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
     }
-    
+
     /**
      * Judge whether contain server in cluster.
      *
@@ -93,30 +93,30 @@ public class ServerListManager implements MemberChangeListener {
         }
         return false;
     }
-    
+
     public List<Member> getServers() {
         return servers;
     }
-    
+
     @Override
     public void onEvent(MembersChangeEvent event) {
         this.servers = new ArrayList<>(event.getMembers());
     }
-    
+
     /**
      * Compatible with older version logic, In version 1.2.1 and before
      *
      * @param configInfo site:ip:lastReportTime:weight
      */
     public synchronized void onReceiveServerStatus(String configInfo) {
-        
+
         Loggers.SRV_LOG.info("receive config info: {}", configInfo);
-        
+
         String[] configs = configInfo.split("\r\n");
         if (configs.length == 0) {
             return;
         }
-        
+
         for (String config : configs) {
             // site:ip:lastReportTime:weight
             String[] params = config.split("#");
@@ -124,49 +124,49 @@ public class ServerListManager implements MemberChangeListener {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-            
+
             Member server = Optional.ofNullable(memberManager.find(params[1]))
                     .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
                             .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
-            
+
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
             memberManager.update(server);
-            
+
             if (!contains(server.getAddress())) {
                 throw new IllegalArgumentException("server: " + server.getAddress() + " is not in serverlist");
             }
         }
     }
-    
+
     private class ServerInfoUpdater implements Runnable {
-        
+
         private int cursor = 0;
-        
+
         @Override
         public void run() {
             List<Member> members = servers;
             if (members.isEmpty()) {
                 return;
             }
-            
+
             this.cursor = (this.cursor + 1) % members.size();
             Member target = members.get(cursor);
             if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
                 return;
             }
-            
+
             // This metadata information exists from 1.3.0 onwards "version"
             if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
                 return;
             }
-            
+
             final String path =
                     UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT
                             + "/state";
             final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
             final String server = target.getAddress();
-            
+
             try {
                 String content = NamingProxy.reqCommon(path, params, server, false);
                 if (!StringUtils.EMPTY.equals(content)) {
@@ -183,41 +183,41 @@ public class ServerListManager implements MemberChangeListener {
             }
         }
     }
-    
+
     private class ServerStatusReporter implements Runnable {
-        
+
         @Override
         public void run() {
             try {
-                
+
                 if (ApplicationUtils.getPort() <= 0) {
                     return;
                 }
-                
+
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
                 if (weight <= 0) {
                     weight = 1;
                 }
-                
+
                 long curTime = System.currentTimeMillis();
                 String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
                         + "\r\n";
-                
+
                 List<Member> allServers = getServers();
-                
+
                 if (!contains(ApplicationUtils.getLocalAddress())) {
                     Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
                             ApplicationUtils.getLocalAddress(), allServers);
                     return;
                 }
-                
+
                 if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
                         .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
                     for (Member server : allServers) {
                         if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
                             continue;
                         }
-                        
+
                         // This metadata information exists from 1.3.0 onwards "version"
                         if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
                             Loggers.SRV_LOG
@@ -226,10 +226,10 @@ public class ServerListManager implements MemberChangeListener {
                                             server.getExtendVal(MemberMetaDataConstants.VERSION));
                             continue;
                         }
-                        
+
                         Message msg = new Message();
                         msg.setData(status);
-                        
+
                         synchronizer.send(server.getAddress(), msg);
                     }
                 }
@@ -239,8 +239,8 @@ public class ServerListManager implements MemberChangeListener {
                 GlobalExecutor
                         .registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
             }
-            
+
         }
     }
-    
+
 }
