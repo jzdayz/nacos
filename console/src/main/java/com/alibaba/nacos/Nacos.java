@@ -43,7 +43,6 @@ public class Nacos {
         }
         System.setProperty("nacos.home", nacosName);
         System.setProperty("nacos.standalone","true");
-
     }
 
     public static void main(String[] args) {
