@@ -236,6 +236,7 @@ public class ServerListManager implements MemberChangeListener {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
             } finally {
+                // 固定时间之后再次执行
                 GlobalExecutor
                         .registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
             }
