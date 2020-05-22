@@ -51,22 +51,22 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
-    
+
     @Autowired
     private Serializer serializer;
-    
+
     @Autowired
     private DistroConsistencyServiceImpl consistencyService;
-    
+
     @Autowired
     private DataStore dataStore;
-    
+
     @Autowired
     private ServiceManager serviceManager;
-    
+
     @Autowired
     private SwitchDomain switchDomain;
-    
+
     /**
      * Synchronize datum.
      *
@@ -76,12 +76,12 @@ public class DistroController {
      */
     @PutMapping("/datum")
     public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
-        
+
         if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
-        
+
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
@@ -95,7 +95,7 @@ public class DistroController {
         }
         return ResponseEntity.ok("ok");
     }
-    
+
     /**
      * Checksum.
      *
@@ -105,11 +105,11 @@ public class DistroController {
      */
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
-        
+
         consistencyService.onReceiveChecksums(dataMap, source);
         return ResponseEntity.ok("ok");
     }
-    
+
     /**
      * Get datum.
      *
@@ -119,7 +119,7 @@ public class DistroController {
      */
     @GetMapping("/datum")
     public ResponseEntity get(@RequestBody String body) throws Exception {
-        
+
         JsonNode bodyNode = JacksonUtils.toObj(body);
         String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
@@ -131,11 +131,11 @@ public class DistroController {
             }
             datumMap.put(key, datum);
         }
-        
+
         byte[] content = serializer.serialize(datumMap);
         return ResponseEntity.ok(content);
     }
-    
+
     /**
      * Get all datums.
      *

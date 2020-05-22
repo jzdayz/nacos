@@ -34,40 +34,40 @@ import javax.annotation.Resource;
  */
 @Service
 public class ServerStatusManager {
-    
+
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
-    
+
     @Autowired
     private SwitchDomain switchDomain;
-    
+
     private ServerStatus serverStatus = ServerStatus.STARTING;
-    
+
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerStatusUpdater(new ServerStatusUpdater());
     }
-    
+
     private void refreshServerStatus() {
-        
+
         if (StringUtils.isNotBlank(switchDomain.getOverriddenServerStatus())) {
             serverStatus = ServerStatus.valueOf(switchDomain.getOverriddenServerStatus());
             return;
         }
-        
+
         if (consistencyService.isAvailable()) {
             serverStatus = ServerStatus.UP;
         } else {
             serverStatus = ServerStatus.DOWN;
         }
     }
-    
+
     public ServerStatus getServerStatus() {
         return serverStatus;
     }
-    
+
     public class ServerStatusUpdater implements Runnable {
-        
+
         @Override
         public void run() {
             refreshServerStatus();
