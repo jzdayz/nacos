@@ -89,7 +89,7 @@ public class DataSyncer {
             Iterator<String> iterator = task.getKeys().iterator();
             while (iterator.hasNext()) {
                 String key = iterator.next();
-                // 已经在处理，删除
+                // 已经在处理，删除(或者发生在重试中)
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
                     if (Loggers.DISTRO.isDebugEnabled()) {
@@ -130,6 +130,7 @@ public class DataSyncer {
             byte[] data = serializer.serialize(datumMap);
 
             long timestamp = System.currentTimeMillis();
+            // 请求其他nacosServer，将本机数据同步到其他机器
             boolean success = NamingProxy.syncData(data, task.getTargetServer());
             if (!success) {
                 SyncTask syncTask = new SyncTask();

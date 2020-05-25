@@ -258,7 +258,7 @@ public class ServiceManager implements RecordListener<Service> {
                     if (serviceKey == null) {
                         continue;
                     }
-                    // 提交一个service变更请求
+                    // 提交一个service的实例健康状态变更请求
                     GlobalExecutor.submitServiceUpdate(new ServiceUpdater(serviceKey));
                 }
             } catch (Exception e) {
@@ -344,6 +344,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
 
         if (changed) {
+            // 发送一个serviceChange事件
             pushService.serviceChanged(service);
             if (Loggers.EVT_LOG.isDebugEnabled()) {
                 StringBuilder stringBuilder = new StringBuilder();

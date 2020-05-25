@@ -69,6 +69,9 @@ public class TaskDispatcher {
         taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 
+    /**
+     *  service的数据同步任务
+     */
     public class TaskScheduler implements Runnable {
 
         private int index;
@@ -119,7 +122,7 @@ public class TaskDispatcher {
 
                     keys.add(key);
                     dataSize++;
-
+                    // 批量条件或者上次请求的时间与现在时间大于指定间隔
                     if (dataSize == partitionConfig.getBatchSyncKeyCount()
                             || (System.currentTimeMillis() - lastDispatchTime) > partitionConfig
                             .getTaskDispatchPeriod()) {
@@ -135,7 +138,7 @@ public class TaskDispatcher {
                             if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
                                 Loggers.DISTRO.debug("add sync task: {}", JacksonUtils.toJson(syncTask));
                             }
-
+                            // 提交一个数据同步请求(service)
                             dataSyncer.submit(syncTask, 0);
                         }
                         lastDispatchTime = System.currentTimeMillis();

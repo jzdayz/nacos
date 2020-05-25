@@ -157,6 +157,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
+        // 数据改变，同步至其他机器
         taskDispatcher.addTask(key);
     }
     

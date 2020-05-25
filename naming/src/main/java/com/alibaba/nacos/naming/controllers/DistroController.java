@@ -69,6 +69,7 @@ public class DistroController {
 
     /**
      * Synchronize datum.
+     * 根据请求的service数据存储在本机，远程请求同步本机数据，一般发生在其他机器新增修改service，本机同步
      *
      * @param dataMap data map
      * @return 'ok' if success
