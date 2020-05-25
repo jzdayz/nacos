@@ -35,11 +35,11 @@ public class Nacos {
     // 这里测试使用
     static {
         System.setProperty(FUNCTION_MODE_PROPERTY_NAME,FUNCTION_MODE_NAMING);
-        String nacosName = null;
+        String nacosName;
         if (System.getProperty("os.name").toLowerCase().contains("windows")){
             nacosName = "C:\\Users\\13976\\Documents\\nacos-server-1.1.4\\nacos";
         }else {
-            nacosName = "/Users/jzdayz/Documents/projects/nacos/nacos";
+            nacosName = "/Users/jzdayz/Documents/nacos/node1/nacos";
         }
         System.setProperty("nacos.home", nacosName);
 //        System.setProperty("nacos.standalone","true");

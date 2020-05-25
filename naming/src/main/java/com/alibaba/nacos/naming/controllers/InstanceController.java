@@ -397,6 +397,7 @@ public class InstanceController {
 
     /**
      * List all instance with health status.
+     * 根据serviceName和namespace获取本机的service对应的数据(实例)
      *
      * @param key (namespace##)?serviceName
      * @return list of instance

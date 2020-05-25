@@ -105,7 +105,10 @@ public class ServerListManager implements MemberChangeListener {
 
     /**
      * Compatible with older version logic, In version 1.2.1 and before
-     *
+     *  1.接收其他server的状态，如果其他server不存在于本机的serverList，则增加
+     *  2.更新心跳时间
+     *  3.修改server的状态，如果其他server，心条间隔时间过长，则标记为不可用
+     *  todo 第三点有点不科学?
      * @param configInfo site:ip:lastReportTime:weight
      */
     public synchronized void onReceiveServerStatus(String configInfo) {
@@ -139,6 +142,9 @@ public class ServerListManager implements MemberChangeListener {
         }
     }
 
+    /**
+     * 读取本机集群配置文件，动态进行修改
+     */
     private class ServerInfoUpdater implements Runnable {
 
         private int cursor = 0;
@@ -184,6 +190,11 @@ public class ServerListManager implements MemberChangeListener {
         }
     }
 
+
+    /**
+     *  1.检查server之间的心条，剔除(healthyServers中)不健康的server
+     *  2.发送集群中其他server，本机的状态(也当做心跳)
+     */
     private class ServerStatusReporter implements Runnable {
 
         @Override
@@ -193,7 +204,7 @@ public class ServerListManager implements MemberChangeListener {
                 if (ApplicationUtils.getPort() <= 0) {
                     return;
                 }
-
+                // 根据可用cpu数定制权重
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
                 if (weight <= 0) {
                     weight = 1;
@@ -229,7 +240,7 @@ public class ServerListManager implements MemberChangeListener {
 
                         Message msg = new Message();
                         msg.setData(status);
-
+                        // 发送其他server，本机的状态
                         synchronizer.send(server.getAddress(), msg);
                     }
                 }

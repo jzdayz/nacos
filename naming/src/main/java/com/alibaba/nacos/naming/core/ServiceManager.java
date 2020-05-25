@@ -258,6 +258,7 @@ public class ServiceManager implements RecordListener<Service> {
                     if (serviceKey == null) {
                         continue;
                     }
+                    // 提交一个service变更请求
                     GlobalExecutor.submitServiceUpdate(new ServiceUpdater(serviceKey));
                 }
             } catch (Exception e) {
@@ -266,6 +267,9 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    /**
+     *  同步service的任务
+     */
     private class ServiceUpdater implements Runnable {
 
         String namespaceId;
@@ -304,6 +308,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @param serverIP    source server Ip
      */
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
+        // 获取指定ip的对应servcie的实例情况
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
         JsonNode serviceJson = JacksonUtils.toObj(msg.getData());
 
@@ -326,10 +331,11 @@ public class ServiceManager implements RecordListener<Service> {
 
         List<Instance> instances = service.allIPs();
         for (Instance instance : instances) {
-
+            // 健康实例
             boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIpAddr()));
             if (valid != instance.isHealthy()) {
                 changed = true;
+                // 同步远程的server，同一个instance以远程为主
                 instance.setHealthy(valid);
                 Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}:{}@{}", serviceName,
                         (instance.isHealthy() ? "ENABLED" : "DISABLED"), instance.getIp(), instance.getPort(),
@@ -839,7 +845,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         return matchList.size();
     }
-
+    // 存储service对应的check值
     public static class ServiceChecksum {
 
         public String namespaceId;
@@ -922,6 +928,9 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    /**
+     *  向nacos集群中，其他节点发送本机的serviceCheck，相当于是告诉其他节点本机的service情况
+     */
     private class ServiceReporter implements Runnable {
 
         @Override
@@ -949,7 +958,7 @@ public class ServiceManager implements RecordListener<Service> {
                         if (service == null || service.isEmpty()) {
                             continue;
                         }
-
+                        // 根据servcie中的信息算出一个check值
                         service.recalculateChecksum();
 
                         checksum.addItem(serviceName, service.getChecksum());
@@ -969,6 +978,7 @@ public class ServiceManager implements RecordListener<Service> {
                         if (server.getAddress().equals(NetUtils.localServer())) {
                             continue;
                         }
+                        // 向其他节点发送本机的 service check
                         synchronizer.send(server.getAddress(), msg);
                     }
                 }

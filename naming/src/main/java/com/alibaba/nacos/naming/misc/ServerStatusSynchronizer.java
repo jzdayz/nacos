@@ -32,25 +32,29 @@ import java.util.Map;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 public class ServerStatusSynchronizer implements Synchronizer {
-    
+    /**
+     * 发送本机server的数据到指定ip
+     * @param serverIP target server address
+     * @param msg      message to send
+     */
     @Override
     public void send(final String serverIP, Message msg) {
         if (StringUtils.isEmpty(serverIP)) {
             return;
         }
-        
+
         final Map<String, String> params = new HashMap<String, String>(2);
-        
+
         params.put("serverStatus", msg.getData());
-        
+
         String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
-        
+
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
-        
+
         try {
             HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler() {
                 @Override
@@ -67,7 +71,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
         }
     }
-    
+
     @Override
     public Message get(String server, String key) {
         return null;
