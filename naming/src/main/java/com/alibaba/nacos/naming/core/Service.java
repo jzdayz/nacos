@@ -342,7 +342,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Get all instance of ephemeral or consistency.
-     *
+     *返回所有的临时或者持久实例
      * @param ephemeral whether ephemeral instance
      * @return all instance of ephemeral if @param ephemeral = true, otherwise all instance of consistency
      */
@@ -532,7 +532,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return checksum;
     }
 
-    /**
+    /** 计算check值
      * Re-calculate checksum of service.
      */
     public synchronized void recalculateChecksum() {
@@ -558,7 +558,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
     }
-
+    // 比较修改添加
     private void updateOrAddCluster(Collection<Cluster> clusters) {
         for (Cluster cluster : clusters) {
             Cluster oldCluster = clusterMap.get(cluster.getName());
@@ -573,6 +573,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+    /**
+     * 删除oldDom中不存在于newDom的集群信息
+     * @param oldDom
+     * @param newDom
+     */
     private void remvDeadClusters(Service oldDom, Service newDom) {
         Collection<Cluster> oldClusters = oldDom.getClusterMap().values();
         Collection<Cluster> newClusters = newDom.getClusterMap().values();

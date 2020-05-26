@@ -39,7 +39,7 @@ import java.util.List;
 
 /**
  * Check and update statues of ephemeral instances, remove them if they have been expired.
- *
+ *     检查实例心跳，超过指定时间，删除实例(如何设置了驱逐)
  * @author nkorange
  */
 public class ClientBeatCheckTask implements Runnable {
@@ -106,7 +106,7 @@ public class ClientBeatCheckTask implements Runnable {
                     }
                 }
             }
-
+            // 没有设置驱逐
             if (!getGlobalConfig().isExpireInstance()) {
                 return;
             }
@@ -132,6 +132,10 @@ public class ClientBeatCheckTask implements Runnable {
 
     }
 
+    /**
+     *  请求本机接口，删除对应实例
+     * @param instance
+     */
     private void deleteIp(Instance instance) {
 
         try {
