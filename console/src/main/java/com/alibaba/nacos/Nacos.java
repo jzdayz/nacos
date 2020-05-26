@@ -39,7 +39,7 @@ public class Nacos {
         if (System.getProperty("os.name").toLowerCase().contains("windows")){
             nacosName = "C:\\Users\\13976\\Documents\\nacos-server-1.1.4\\nacos";
         }else {
-            nacosName = "/Users/jzdayz/Documents/nacos/node2/nacos";
+            nacosName = "/Users/jzdayz/Documents/nacos/node2/";
         }
         System.setProperty("nacos.home", nacosName);
 //        System.setProperty("nacos.standalone","true");
