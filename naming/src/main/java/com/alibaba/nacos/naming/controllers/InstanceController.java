@@ -131,7 +131,7 @@ public class InstanceController {
 
     /**
      * Deregister instances.
-     *
+     *注销服务
      * @param request http request
      * @return 'ok' if success
      * @throws Exception any error during deregister
