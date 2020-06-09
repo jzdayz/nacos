@@ -22,7 +22,6 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
-import static com.alibaba.nacos.core.utils.SystemUtils.FUNCTION_MODE_NAMING;
 
 /**
  * @author nacos
