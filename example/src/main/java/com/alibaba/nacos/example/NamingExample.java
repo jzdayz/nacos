@@ -31,33 +31,33 @@ import java.util.Properties;
  * @author nkorange
  */
 public class NamingExample {
-
-
+    
+    
     static {
-
-        System.setProperty("serverAddr","http://localhost:8848");
-        System.setProperty("namespace","public");
-
+        
+        System.setProperty("serverAddr", "http://localhost:8848");
+        System.setProperty("namespace", "public");
+        
     }
-
+    
     public static void main(String[] args) throws NacosException {
-
+        
         Properties properties = new Properties();
         properties.setProperty("serverAddr", System.getProperty("serverAddr"));
         properties.setProperty("namespace", System.getProperty("namespace"));
-
+        
         NamingService naming = NamingFactory.createNamingService(properties);
-
+        
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
-
+        
         naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-
+        
         System.out.println(naming.getAllInstances("nacos.test.3"));
-
+        
         naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-
+        
         System.out.println(naming.getAllInstances("nacos.test.3"));
-
+        
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {
