@@ -58,68 +58,68 @@ import java.util.Set;
  */
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
-    
+
     /**
      * The labels relevant to this the selector.
      *
      * @see com.alibaba.nacos.api.cmdb.pojo.Label
      */
     private Set<String> labels;
-    
+
     private static final Set<String> SUPPORTED_INNER_CONNCETORS = new HashSet<>();
-    
+
     private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
-    
+
     private static final String CONSUMER_PREFIX = "CONSUMER.label.";
-    
+
     private static final String PROVIDER_PREFIX = "PROVIDER.label.";
-    
+
     private static final char CEQUAL = '=';
-    
+
     private static final char CAND = '&';
-    
+
     static {
         SUPPORTED_INNER_CONNCETORS.add(String.valueOf(CEQUAL));
         SUPPORTED_OUTER_CONNCETORS.add(String.valueOf(CAND));
         JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
     }
-    
+
     public Set<String> getLabels() {
         return labels;
     }
-    
+
     public void setLabels(Set<String> labels) {
         this.labels = labels;
     }
-    
+
     public LabelSelector() {
         super();
     }
-    
+
     private CmdbReader getCmdbReader() {
         return ApplicationUtils.getBean(CmdbReader.class);
     }
-    
+
     public static Set<String> parseExpression(String expression) throws NacosException {
         return ExpressionInterpreter.parseExpression(expression);
     }
-    
+
     @Override
     public List<Instance> select(String consumer, List<Instance> providers) {
-        
+
         if (labels.isEmpty()) {
             return providers;
         }
-        
+
         List<Instance> instanceList = new ArrayList<>();
         for (Instance instance : providers) {
-            
+
             boolean matched = true;
             for (String labelName : getLabels()) {
-                
+
                 String consumerLabelValue = getCmdbReader()
                         .queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
-                
+
                 if (StringUtils.isNotBlank(consumerLabelValue) && !StringUtils.equals(consumerLabelValue,
                         getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
@@ -130,21 +130,21 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 instanceList.add(instance);
             }
         }
-        
+
         if (instanceList.isEmpty()) {
             return providers;
         }
-        
+
         return instanceList;
     }
-    
+
     /**
      * Expression interpreter for label selector.
      *
      * <p>For now it supports very limited set of syntax rules.
      */
     public static class ExpressionInterpreter {
-        
+
         /**
          * Parse the label expression.
          *
@@ -158,53 +158,53 @@ public class LabelSelector extends ExpressionSelector implements Selector {
          * @return collection of labels
          */
         public static Set<String> parseExpression(String expression) throws NacosException {
-            
+
             if (StringUtils.isBlank(expression)) {
                 return new HashSet<>();
             }
-            
+
             expression = StringUtils.deleteWhitespace(expression);
-            
+
             List<String> elements = getTerms(expression);
             Set<String> gotLabels = new HashSet<>();
             int index = 0;
-            
+
             index = checkInnerSyntax(elements, index);
-            
+
             if (index == -1) {
                 throw new NacosException(NacosException.INVALID_PARAM, "parse expression failed!");
             }
-            
+
             gotLabels.add(elements.get(index++).split(PROVIDER_PREFIX)[1]);
-            
+
             while (index < elements.size()) {
-                
+
                 index = checkOuterSyntax(elements, index);
-                
+
                 if (index >= elements.size()) {
                     return gotLabels;
                 }
-                
+
                 if (index == -1) {
                     throw new NacosException(NacosException.INVALID_PARAM, "parse expression failed!");
                 }
-                
+
                 gotLabels.add(elements.get(index++).split(PROVIDER_PREFIX)[1]);
             }
-            
+
             return gotLabels;
         }
-        
+
         public static List<String> getTerms(String expression) {
-            
+
             List<String> terms = new ArrayList<>();
-            
+
             Set<Character> characters = new HashSet<>();
             characters.add(CEQUAL);
             characters.add(CAND);
-            
+
             char[] chars = expression.toCharArray();
-            
+
             int lastIndex = 0;
             for (int index = 0; index < chars.length; index++) {
                 char ch = chars[index];
@@ -215,73 +215,73 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                     lastIndex = index;
                 }
             }
-            
+
             terms.add(expression.substring(lastIndex, chars.length));
-            
+
             return terms;
         }
-        
+
         private static int skipEmpty(List<String> elements, int start) {
             while (start < elements.size() && StringUtils.isBlank(elements.get(start))) {
                 start++;
             }
             return start;
         }
-        
+
         private static int checkOuterSyntax(List<String> elements, int start) {
-            
+
             int index = start;
-            
+
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return index;
             }
-            
+
             if (!SUPPORTED_OUTER_CONNCETORS.contains(elements.get(index++))) {
                 return -1;
             }
-            
+
             return checkInnerSyntax(elements, index);
         }
-        
+
         private static int checkInnerSyntax(List<String> elements, int start) {
-            
+
             int index = start;
-            
+
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
             }
-            
+
             if (!elements.get(index).startsWith(CONSUMER_PREFIX)) {
                 return -1;
             }
-            
+
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
             }
-            
+
             if (!SUPPORTED_INNER_CONNCETORS.contains(elements.get(index++))) {
                 return -1;
             }
-            
+
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
             }
-            
+
             if (!elements.get(index).startsWith(PROVIDER_PREFIX)) {
                 return -1;
             }
-            
+
             String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
-            
+
             String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
             if (!labelConsumer.equals(labelProvider)) {
                 return -1;
             }
-            
+
             return index;
         }
     }

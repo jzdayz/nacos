@@ -55,6 +55,8 @@ import java.util.Map;
  * Distro filter.
  *
  * @author nacos
+ *
+ *  过滤，如果不是自己负责的service，那么请求别的nacos服务器去处理
  */
 public class DistroFilter implements Filter {
     

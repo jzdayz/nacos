@@ -19,10 +19,13 @@ package com.alibaba.nacos.naming.misc;
 /**
  * Synchronizer.
  *
+ *  同步状态
+ *  1.同一集群同步server的情况
+ *  2.同一个service，同步于不同的NacosServer
  * @author nacos
  */
 public interface Synchronizer {
-    
+
     /**
      * Send message to server.
      *
@@ -30,7 +33,7 @@ public interface Synchronizer {
      * @param msg      message to send
      */
     void send(String serverIP, Message msg);
-    
+
     /**
      * Get message from server using message key.
      *

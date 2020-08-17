@@ -39,81 +39,85 @@ import java.util.List;
 
 /**
  * Check and update statues of ephemeral instances, remove them if they have been expired.
- *
+ *     检查实例心跳，超过指定时间，删除实例(如何设置了驱逐)
  * @author nkorange
  */
 public class ClientBeatCheckTask implements Runnable {
-    
+
     private Service service;
-    
+
     public ClientBeatCheckTask(Service service) {
         this.service = service;
     }
-    
+
     @JsonIgnore
     public PushService getPushService() {
         return ApplicationUtils.getBean(PushService.class);
     }
-    
+
     @JsonIgnore
     public DistroMapper getDistroMapper() {
         return ApplicationUtils.getBean(DistroMapper.class);
     }
-    
+
     public GlobalConfig getGlobalConfig() {
         return ApplicationUtils.getBean(GlobalConfig.class);
     }
-    
+
     public SwitchDomain getSwitchDomain() {
         return ApplicationUtils.getBean(SwitchDomain.class);
     }
-    
+
     public String taskKey() {
         return KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName());
     }
-    
+
     @Override
     public void run() {
         try {
             if (!getDistroMapper().responsible(service.getName())) {
                 return;
             }
-            
+
             if (!getSwitchDomain().isHealthCheckEnabled()) {
                 return;
             }
-            
+            // 获取所有的临时ip
             List<Instance> instances = service.allIPs(true);
-            
+
             // first set health status of instances:
             for (Instance instance : instances) {
+                // 超过指定的时间没有心跳
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
+                            // 设置为"不健康"
                             instance.setHealthy(false);
                             Loggers.EVT_LOG
                                     .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                             instance.getIp(), instance.getPort(), instance.getClusterName(),
                                             service.getName(), UtilsAndCommons.LOCALHOST_SITE,
                                             instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
+                            // 用pushServer处理对应的service，剔除其他节点的"此"节点
                             getPushService().serviceChanged(service);
+                            // 发送实例心跳过期的事件
                             ApplicationUtils.publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
                     }
                 }
             }
-            
+            // 没有设置驱逐
             if (!getGlobalConfig().isExpireInstance()) {
                 return;
             }
-            
+
             // then remove obsolete instances:
             for (Instance instance : instances) {
-                
+
                 if (instance.isMarked()) {
                     continue;
                 }
-                
+
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(),
@@ -121,24 +125,28 @@ public class ClientBeatCheckTask implements Runnable {
                     deleteIp(instance);
                 }
             }
-            
+
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         }
-        
+
     }
-    
+
+    /**
+     *  请求本机接口，删除对应实例
+     * @param instance
+     */
     private void deleteIp(Instance instance) {
-        
+
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp()).appendParam("port", String.valueOf(instance.getPort()))
                     .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
                     .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
-            
+
             String url = "http://127.0.0.1:" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
-            
+
             // delete instance asynchronously:
             HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
                 @Override
@@ -151,7 +159,7 @@ public class ClientBeatCheckTask implements Runnable {
                     return null;
                 }
             });
-            
+
         } catch (Exception e) {
             Loggers.SRV_LOG
                     .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(), e);

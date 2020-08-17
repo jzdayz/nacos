@@ -42,17 +42,17 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class TaskDispatcher {
-    
+
     @Autowired
     private GlobalConfig partitionConfig;
-    
+
     @Autowired
     private DataSyncer dataSyncer;
-    
+
     private List<TaskScheduler> taskSchedulerList = new ArrayList<>();
-    
+
     private final int cpuCoreCount = Runtime.getRuntime().availableProcessors();
-    
+
     /**
      * Init task dispatcher.
      */
@@ -64,66 +64,69 @@ public class TaskDispatcher {
             GlobalExecutor.submitTaskDispatch(taskScheduler);
         }
     }
-    
+
     public void addTask(String key) {
         taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
-    
+
+    /**
+     *  service的数据同步任务
+     */
     public class TaskScheduler implements Runnable {
-        
+
         private int index;
-        
+
         private int dataSize = 0;
-        
+
         private long lastDispatchTime = 0L;
-        
+
         private BlockingQueue<String> queue = new LinkedBlockingQueue<>(128 * 1024);
-        
+
         public TaskScheduler(int index) {
             this.index = index;
         }
-        
+
         public void addTask(String key) {
             queue.offer(key);
         }
-        
+
         public int getIndex() {
             return index;
         }
-        
+
         @Override
         public void run() {
-            
+
             List<String> keys = new ArrayList<>();
             while (true) {
-                
+
                 try {
-                    
+
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(), TimeUnit.MILLISECONDS);
-                    
+
                     if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
                         Loggers.DISTRO.debug("got key: {}", key);
                     }
-                    
+
                     if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
                         continue;
                     }
-                    
+
                     if (StringUtils.isBlank(key)) {
                         continue;
                     }
-                    
+
                     if (dataSize == 0) {
                         keys = new ArrayList<>();
                     }
-                    
+
                     keys.add(key);
                     dataSize++;
-                    
+                    // 批量条件或者上次请求的时间与现在时间大于指定间隔
                     if (dataSize == partitionConfig.getBatchSyncKeyCount()
                             || (System.currentTimeMillis() - lastDispatchTime) > partitionConfig
                             .getTaskDispatchPeriod()) {
-                        
+
                         for (Member member : dataSyncer.getServers()) {
                             if (NetUtils.localServer().equals(member.getAddress())) {
                                 continue;
@@ -131,17 +134,17 @@ public class TaskDispatcher {
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getAddress());
-                            
+
                             if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
                                 Loggers.DISTRO.debug("add sync task: {}", JacksonUtils.toJson(syncTask));
                             }
-                            
+                            // 提交一个数据同步请求(service)
                             dataSyncer.submit(syncTask, 0);
                         }
                         lastDispatchTime = System.currentTimeMillis();
                         dataSize = 0;
                     }
-                    
+
                 } catch (Exception e) {
                     Loggers.DISTRO.error("dispatch sync task failed.", e);
                 }

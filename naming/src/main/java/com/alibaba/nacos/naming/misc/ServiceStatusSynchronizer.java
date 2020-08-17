@@ -32,26 +32,30 @@ import java.util.Map;
  * @author nacos
  */
 public class ServiceStatusSynchronizer implements Synchronizer {
-    
+    /**
+     *  发送本机的service数据到指定的ip
+     * @param serverIP target server address
+     * @param msg      message to send
+     */
     @Override
     public void send(final String serverIP, Message msg) {
         if (serverIP == null) {
             return;
         }
-        
+
         Map<String, String> params = new HashMap<String, String>(10);
-        
+
         params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());
-        
+
         String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
-        
+
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/service/status";
         }
-        
+
         try {
             HttpClient.asyncHttpPostLarge(url, null, JacksonUtils.toJson(params), new AsyncCompletionHandler() {
                 @Override
@@ -59,7 +63,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: {}",
                                 serverIP);
-                        
+
                         return 1;
                     }
                     return 0;
@@ -68,19 +72,26 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIP, e);
         }
-        
+
     }
-    
+
+
+    /**
+     *  获取指定ip的service数据
+     * @param serverIP source server address
+     * @param key      message key
+     * @return
+     */
     @Override
     public Message get(String serverIP, String key) {
         if (serverIP == null) {
             return null;
         }
-        
+
         Map<String, String> params = new HashMap<>(1);
-        
+
         params.put("key", key);
-        
+
         String result;
         try {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
@@ -93,14 +104,14 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);
             return null;
         }
-        
+
         if (result == null || result.equals(StringUtils.EMPTY)) {
             return null;
         }
-        
+
         Message msg = new Message();
         msg.setData(result);
-        
+
         return msg;
     }
 }
