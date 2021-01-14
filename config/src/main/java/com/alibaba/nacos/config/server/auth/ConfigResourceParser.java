@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.core.auth.Resource;
-import com.alibaba.nacos.core.auth.ResourceParser;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.alibaba.nacos.auth.model.Resource;
+import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -36,7 +36,7 @@ public class ConfigResourceParser implements ResourceParser {
     @Override
     public String parseName(Object request) {
         HttpServletRequest req = (HttpServletRequest) request;
-        String namespaceId = req.getParameter("tenant");
+        String namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter("tenant"));
         String groupName = req.getParameter("group");
         String dataId = req.getParameter("dataId");
         

@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -73,14 +75,16 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
         String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows = "select role,username from roles where ";
-        
-        String where = " username='" + username + "' ";
-        
-        if (StringUtils.isBlank(username)) {
+    
+        String where = " username= ? ";
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            params = Collections.singletonList(username);
+        } else {
             where = " 1=1 ";
         }
         
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
                 pageSize, ROLE_INFO_ROW_MAPPER);
         
     }
@@ -132,6 +136,13 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
+    }
+    
+    @Override
+    public List<String> findRolesLikeRoleName(String role) {
+        String sql = "SELECT role FROM roles WHERE role like ? ";
+        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
+        return users;
     }
     
 }
