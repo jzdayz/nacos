@@ -21,6 +21,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import static com.alibaba.nacos.sys.env.Constants.FUNCTION_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_CONFIG;
+
 
 /**
  * @author nacos
@@ -32,15 +35,15 @@ public class Nacos {
 
     // 这里测试使用
     static {
-//        System.setProperty(FUNCTION_MODE_PROPERTY_NAME,FUNCTION_MODE_CONFIG);
+        System.setProperty(FUNCTION_MODE_PROPERTY_NAME,FUNCTION_MODE_CONFIG);
         String nacosName;
         if (System.getProperty("os.name").toLowerCase().contains("windows")){
             nacosName = "C:\\Users\\13976\\Documents\\nacos-server-1.1.4\\nacos";
         }else {
-            nacosName = "/Users/huqingfeng/Documents/nacos/";
+            nacosName = "/Users/huqingfeng/Documents/tools/nacos/";
         }
         System.setProperty("nacos.home", nacosName);
-        System.setProperty("nacos.standalone","true");
+//        System.setProperty("nacos.standalone","true");
     }
 
     public static void main(String[] args) {

@@ -50,23 +50,23 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SubscribeManager {
-    
+
     private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
-    
+
     @Autowired
     private PushService pushService;
-    
+
     @Autowired
     private ServerMemberManager memberManager;
-    
+
     private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
         return pushService.getClientsFuzzy(serviceName, namespaceId);
     }
-    
+
     private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
         return pushService.getClients(serviceName, namespaceId);
     }
-    
+
     /**
      * Get subscribers.
      *
@@ -83,11 +83,12 @@ public class SubscribeManager {
             if (memberManager.getServerList().size() <= 1) {
                 return getSubscribersFuzzy(serviceName, namespaceId);
             }
-            
+
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
             // try sync data from remote server:
+            // 从其他成员获取订阅者的列表，聚合在一起
             for (Member server : memberManager.allMembers()) {
-                
+
                 Map<String, String> paramValues = new HashMap<>(128);
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -96,25 +97,25 @@ public class SubscribeManager {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
                 }
-                
+
                 RestResult<String> result = HttpClient.httpGet(
                         "http://" + server.getAddress() + EnvUtil.getContextPath()
                                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
                         paramValues);
-                
+
                 if (result.ok()) {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
             }
             return CollectionUtils.isNotEmpty(subscriberList) ? subscriberList.stream()
-                    .filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList()) : Collections.EMPTY_LIST;
+                    .filter(distinctByKey(Subscriber::toString)/*去重*/).collect(Collectors.toList()) : Collections.EMPTY_LIST;
         } else {
             // local server
             return getSubscribersFuzzy(serviceName, namespaceId);
         }
     }
-    
+
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
         return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;
